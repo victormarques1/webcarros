@@ -19,7 +19,7 @@ export default function Home() {
         Carros novos e usados em todo o Brasil
       </h1>
 
-      <main className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <main className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 mx-3">
         <section className="w-full bg-white rounded-lg">
           <img
             className="w-full rounded-lg mb-2 max-h-72 hover:scale-105 transition-all"
@@ -39,8 +39,6 @@ export default function Home() {
             <span className="text-zinc-700">Imbituba - SC</span>
           </div>
         </section>
-
-        
       </main>
     </div>
   );
