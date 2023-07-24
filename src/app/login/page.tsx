@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Image from "next/image";
 import logoImg from "../../assets/logo.svg";
 import Link from "next/link";
@@ -7,6 +8,9 @@ import Input from "@/components/Input";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { auth } from "@/services/firebaseConnection";
+import { useRouter } from "next/navigation";
 
 const schema = z.object({
   email: z
@@ -19,6 +23,8 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function Login() {
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
@@ -28,8 +34,22 @@ export default function Login() {
     mode: "onChange",
   });
 
+  useEffect(() => {
+    async function handleLogout() {
+      await signOut(auth);
+    }
+    handleLogout();
+  }, []);
+
   function onSubmit(data: FormData) {
-    console.log(data);
+    signInWithEmailAndPassword(auth, data.email, data.password)
+      .then(() => {
+        console.log("Logado com sucesso");
+        router.push("/dashboard");
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }
 
   return (
@@ -62,12 +82,12 @@ export default function Login() {
           />
         </div>
 
-        <button className="bg-zinc-900 w-full rounded-md text-white h-10 font-medium">Acessar</button>
+        <button className="bg-zinc-900 w-full rounded-md text-white h-10 font-medium">
+          Acessar
+        </button>
       </form>
 
-      <Link href="/register">
-       Ainda não possui uma conta? Cadastre-se
-      </Link>
+      <Link href="/register">Ainda não possui uma conta? Cadastre-se</Link>
     </div>
   );
 }

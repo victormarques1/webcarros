@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Image from "next/image";
 import logoImg from "../../assets/logo.svg";
 import Link from "next/link";
@@ -7,6 +8,9 @@ import Input from "@/components/Input";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { auth } from "../../services/firebaseConnection";
+import { createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 const schema = z.object({
   name: z.string().nonempty("O campo nome é obrigatório"),
@@ -14,12 +18,19 @@ const schema = z.object({
     .string()
     .email("Insira um email válido")
     .nonempty("O campo email é obrigatório"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres").nonempty("O campo senha é obrigatório"),
+  password: z
+    .string()
+    .min(6, "A senha deve ter pelo menos 6 caracteres")
+    .nonempty("O campo senha é obrigatório"),
 });
 
 type FormData = z.infer<typeof schema>;
 
+
+
 export default function Register() {
+  const router = useRouter();
+  
   const {
     register,
     handleSubmit,
@@ -28,9 +39,29 @@ export default function Register() {
     resolver: zodResolver(schema),
     mode: "onChange",
   });
+  
+  useEffect(() => {
+    async function handleLogout() {
+      await signOut(auth);
+    }
+    handleLogout();
+  }, []);
+  
+  async function onSubmit(data: FormData) {
+    createUserWithEmailAndPassword(auth, data.email, data.password)
+      .then(async (user) => {
+        await updateProfile(user.user, {
+          displayName: data.name,
+        });
 
-  function onSubmit(data: FormData) {
-    console.log(data);
+        console.log("Cadastrado");
+        router.push("/dashboard");
+
+      })
+      .catch((error) => {
+        console.log("Erro ao cadastrar esse usuário");
+        console.log(error);
+      });
   }
 
   return (
@@ -73,12 +104,12 @@ export default function Register() {
           />
         </div>
 
-        <button className="bg-zinc-900 w-full rounded-md text-white h-10 font-medium">Acessar</button>
+        <button className="bg-zinc-900 w-full rounded-md text-white h-10 font-medium">
+          Cadastrar
+        </button>
       </form>
 
-      <Link href="/login">
-       Já possui uma conta? Faça o login
-      </Link>
+      <Link href="/login">Já possui uma conta? Faça o login</Link>
     </div>
   );
 }
