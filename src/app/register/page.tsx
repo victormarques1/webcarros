@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useContext } from "react";
 import Image from "next/image";
 import logoImg from "../../assets/logo.svg";
 import Link from "next/link";
@@ -9,8 +9,13 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { auth } from "../../services/firebaseConnection";
-import { createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signOut,
+} from "firebase/auth";
 import { useRouter } from "next/navigation";
+import { AuthContext } from "@/contexts/AuthContext";
 
 const schema = z.object({
   name: z.string().nonempty("O campo nome é obrigatório"),
@@ -26,11 +31,10 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-
-
 export default function Register() {
+  const { handleInfoUser } = useContext(AuthContext);
   const router = useRouter();
-  
+
   const {
     register,
     handleSubmit,
@@ -39,14 +43,14 @@ export default function Register() {
     resolver: zodResolver(schema),
     mode: "onChange",
   });
-  
+
   useEffect(() => {
     async function handleLogout() {
       await signOut(auth);
     }
     handleLogout();
   }, []);
-  
+
   async function onSubmit(data: FormData) {
     createUserWithEmailAndPassword(auth, data.email, data.password)
       .then(async (user) => {
@@ -54,9 +58,14 @@ export default function Register() {
           displayName: data.name,
         });
 
+        handleInfoUser({
+          name: data.name, 
+          email: data.email,
+          uid: user.user.uid
+        })
+        
         console.log("Cadastrado");
         router.push("/dashboard");
-
       })
       .catch((error) => {
         console.log("Erro ao cadastrar esse usuário");
