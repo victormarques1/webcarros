@@ -11,13 +11,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ChangeEvent, useContext, useState } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import { v4 as uuidV4 } from "uuid";
-import { storage } from "@/services/firebaseConnection";
+import { storage, db } from "@/services/firebaseConnection";
 import {
   ref,
   uploadBytes,
   getDownloadURL,
   deleteObject,
 } from "firebase/storage";
+import { addDoc, collection } from "firebase/firestore";
 
 const schema = z.object({
   name: z.string().nonempty("O campo nome é obrigatório"),
@@ -100,7 +101,41 @@ export default function New() {
   }
 
   function onSubmit(data: FormData) {
-    console.log(data);
+    if (carImages.length === 0) {
+      alert("envie alguma imagem");
+      return;
+    }
+
+    const carListImages = carImages.map((car) => {
+      return {
+        uid: car.uid,
+        name: car.name,
+        url: car.url,
+      };
+    });
+
+    addDoc(collection(db, "cars"), {
+      name: data.name,
+      model: data.model,
+      whatsapp: data.whatsapp,
+      city: data.city,
+      year: data.year,
+      km: data.km,
+      price: data.price,
+      description: data.description,
+      created: new Date(),
+      owner: user?.name,
+      uid: user?.uid,
+      images: carListImages,
+    })
+      .then(() => {
+        reset();
+        setCarImages([]);
+        console.log("cadastrado com sucesso");
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   }
 
   async function handleDeleteImage(item: ImageItemProps) {
