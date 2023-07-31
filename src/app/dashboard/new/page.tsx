@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import DashboardHeader from "@/components/PanelHeader";
 import { FiUpload, FiTrash } from "react-icons/fi";
 import { useForm } from "react-hook-form";
+import Image from "next/image";
 import Input from "@/components/Input";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,7 +24,7 @@ import { addDoc, collection } from "firebase/firestore";
 const schema = z.object({
   name: z.string().nonempty("O campo nome é obrigatório"),
   model: z.string().nonempty("O modelo é obrigatório"),
-  year: z.string().nonempty("O ano do carro é obrigatório"),
+  year: z.string().nonempty("O Ano do carro é obrigatório"),
   km: z.string().nonempty("O KM do carro é obrigatório"),
   price: z.string().nonempty("O preço é obrigatório"),
   city: z.string().nonempty("A cidade é obrigatória"),
@@ -31,7 +32,7 @@ const schema = z.object({
     .string()
     .min(1, "O Telefone é obrigatório")
     .refine((value) => /^(\d{11,12})$/.test(value), {
-      message: "Número de telefone inválido.",
+      message: "Numero de telefone invalido.",
     }),
   description: z.string().nonempty("A descrição é obrigatória"),
 });
@@ -74,35 +75,31 @@ export default function New() {
 
   async function handleUpload(image: File) {
     if (!user?.uid) {
-      console.error("Usuário não autenticado.");
       return;
     }
 
-    const currentUid = user.uid;
+    const currentUid = user?.uid;
     const uidImage = uuidV4();
 
     const uploadRef = ref(storage, `images/${currentUid}/${uidImage}`);
 
-    try {
-      const snapshot = await uploadBytes(uploadRef, image);
-      const downloadUrl = await getDownloadURL(snapshot.ref);
+    uploadBytes(uploadRef, image).then((snapshot) => {
+      getDownloadURL(snapshot.ref).then((downloadUrl) => {
+        const imageItem = {
+          name: uidImage,
+          uid: currentUid,
+          previewUrl: URL.createObjectURL(image),
+          url: downloadUrl,
+        };
 
-      const imageItem = {
-        name: uidImage,
-        uid: currentUid,
-        previewUrl: URL.createObjectURL(image),
-        url: downloadUrl,
-      };
-
-      setCarImages((images) => [...images, imageItem]);
-    } catch (error) {
-      console.error("Erro ao fazer upload da imagem:", error);
-    }
+        setCarImages((images) => [...images, imageItem]);
+      });
+    });
   }
 
   function onSubmit(data: FormData) {
     if (carImages.length === 0) {
-      alert("envie alguma imagem");
+      alert("Envie alguma imagem deste carro!");
       return;
     }
 
@@ -131,10 +128,11 @@ export default function New() {
       .then(() => {
         reset();
         setCarImages([]);
-        console.log("cadastrado com sucesso");
+        console.log("CADASTRADO COM SUCESSO!");
       })
       .catch((error) => {
         console.log(error);
+        console.log("ERRO AO CADASTRAR NO BANCO");
       });
   }
 
@@ -147,7 +145,7 @@ export default function New() {
       await deleteObject(imageRef);
       setCarImages(carImages.filter((car) => car.url !== item.url));
     } catch (err) {
-      console.log(err);
+      console.log("ERRO AO DELETAR");
     }
   }
 
@@ -163,7 +161,7 @@ export default function New() {
           <div className="cursor-pointer">
             <input
               type="file"
-              accept="image/"
+              accept="image/*"
               className="opacity-0 cursor-pointer"
               onChange={handleFile}
             />
@@ -189,6 +187,7 @@ export default function New() {
           </div>
         ))}
       </div>
+
       <div className="w-full bg-white p-3 rounded-lg flex flex-col sm:flex-row items-center gap-2 mt-2">
         <form className="w-full" onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-3">
@@ -198,7 +197,7 @@ export default function New() {
               register={register}
               name="name"
               error={errors.name?.message}
-              placeholder="Ex: Onix"
+              placeholder="Ex: Onix 1.0..."
             />
           </div>
 
@@ -209,7 +208,7 @@ export default function New() {
               register={register}
               name="model"
               error={errors.model?.message}
-              placeholder="Ex: 1.0 Turbo Manual"
+              placeholder="Ex: 1.0 Flex PLUS MANUAL..."
             />
           </div>
 
@@ -221,18 +220,18 @@ export default function New() {
                 register={register}
                 name="year"
                 error={errors.year?.message}
-                placeholder="Ex: 2020/2021"
+                placeholder="Ex: 2016/2016..."
               />
             </div>
 
             <div className="w-full">
-              <p className="mb-2 font-medium">Kilometragem</p>
+              <p className="mb-2 font-medium">KM rodados</p>
               <Input
                 type="text"
                 register={register}
                 name="km"
                 error={errors.km?.message}
-                placeholder="Ex: 24.200"
+                placeholder="Ex: 23.900..."
               />
             </div>
           </div>
@@ -245,7 +244,7 @@ export default function New() {
                 register={register}
                 name="whatsapp"
                 error={errors.whatsapp?.message}
-                placeholder="Ex: 05199920123"
+                placeholder="Ex: 011999101923..."
               />
             </div>
 
@@ -256,7 +255,7 @@ export default function New() {
                 register={register}
                 name="city"
                 error={errors.city?.message}
-                placeholder="Ex: Santa Maria / RS"
+                placeholder="Ex: Campo Grande - MS..."
               />
             </div>
           </div>
@@ -268,7 +267,7 @@ export default function New() {
               register={register}
               name="price"
               error={errors.price?.message}
-              placeholder="Ex: 68.000"
+              placeholder="Ex: 69.000..."
             />
           </div>
 
@@ -282,13 +281,13 @@ export default function New() {
               placeholder="Digite a descrição completa sobre o carro..."
             />
             {errors.description && (
-              <p className="mb-1 text-red-500">{errors.description?.message}</p>
+              <p className="mb-1 text-red-500">{errors.description.message}</p>
             )}
           </div>
 
           <button
             type="submit"
-            className="w-full h-10 rounded-md bg-zinc-900 text-white font-medium"
+            className="w-full rounded-md bg-zinc-900 text-white font-medium h-10"
           >
             Cadastrar
           </button>
