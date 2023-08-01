@@ -13,7 +13,7 @@ export default function Header() {
   return (
     <div className="w-full flex items-center justify-center h-16 bg-white drop-shadow-sm mb-4">
       <header className="flex w-full items-center justify-between px-4 mx-auto">
-        <Link href="/">
+        <Link href="/home">
           <Image src={logoImg} alt="logo do site" />
         </Link>
 

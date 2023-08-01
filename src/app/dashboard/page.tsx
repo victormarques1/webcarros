@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { db, storage } from "@/services/firebaseConnection";
 import { ref, deleteObject } from "firebase/storage";
+import Link from "next/link";
 
 interface CarProps {
   id: string;
@@ -37,6 +38,7 @@ interface ImageCarProps {
 export default function Dashboard() {
   const { user } = useContext(AuthContext);
   const [cars, setCars] = useState<CarProps[]>([]);
+  console.log(cars);
 
   useEffect(() => {
     function loadCars() {
@@ -107,10 +109,12 @@ export default function Dashboard() {
               >
                 <FiTrash2 size={26} color="#000" />
               </button>
-              <img
-                className="w-full roundd-lg mb-2 max-h-70"
-                src={car.images[0].url}
-              />
+              <Link href={`car/${car.id}`}>
+                <img
+                  className="w-full roundd-lg mb-2 max-h-70"
+                  src={car.images[0].url}
+                />
+              </Link>
               <p className="font-bold mt-1 px-2 mb-2">{car.name}</p>
 
               <div className="flex flex-col px-2">
